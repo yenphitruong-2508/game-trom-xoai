@@ -1,157 +1,289 @@
 import streamlit as st
-import random
-import time
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Trộm Xoài Bị Rượt", page_icon="🥭", layout="centered")
+st.set_page_config(page_title="Trộm Xoài Rượt Đuổi 3D", page_icon="🥭", layout="centered")
 
-# CSS tạo giao diện sống động
-st.markdown("""
+html_code = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
 <style>
-    .main-title { text-align: center; color: #FF4B4B; font-weight: bold; }
-    .status-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-    .story-box { background-color: #fff3cd; border-left: 5px solid #ffeba2; padding: 15px; border-radius: 5px; font-size: 18px; margin-bottom: 20px; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        text-align: center;
+        background-color: #1a1a2e;
+        color: white;
+        margin: 0;
+        padding: 5px;
+    }
+    #game-container {
+        position: relative;
+        width: 100%;
+        max-width: 450px;
+        height: 600px;
+        margin: 0 auto;
+        border: 4px solid #f1c40f;
+        border-radius: 15px;
+        overflow: hidden;
+        background-color: #16213e;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    }
+    .scene {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        display: none;
+        background-size: cover;
+        background-position: center;
+    }
+    .active { display: block; }
+    
+    .btn {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 20px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        margin: 4px;
+        transition: transform 0.1s;
+    }
+    .btn:active { transform: scale(0.92); }
+    .btn-boost { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    
+    .character {
+        position: absolute;
+        transition: all 0.2s ease;
+    }
+    
+    .dialog-box {
+        position: absolute;
+        bottom: 15px;
+        left: 5%;
+        width: 90%;
+        background: rgba(0,0,0,0.85);
+        border: 2px solid #f1c40f;
+        border-radius: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    #chaseCanvas {
+        width: 100%;
+        height: 100%;
+    }
 </style>
-""", unsafe_allow_html=True)
+</head>
+<body>
 
-# Khởi tạo trạng thái Game (Session State)
-if 'state' not in st.session_state:
-    st.session_state.state = 'START' # START, STEAL, CHASE, GAMEOVER, WIN
-    st.session_state.xoai = 0
-    st.session_state.distance = 0 # Quãng đường đã chạy (Mục tiêu 100m)
-    st.session_state.gap = 15 # Khoảng cách với chủ nhà/chó (mét)
-    st.session_state.boost = 2 # Số lần bấm Tăng tốc
-    st.session_state.log = []
-    st.session_state.obstacle = None
+<div id="game-container">
+    <!-- CẢNH 1: VƯỜN XOÀI NHÀ BÀ CHỦ -->
+    <div id="scene1" class="scene active" style="background-image: url('https://i.imgur.com/8QzX8aR.jpeg');">
+        <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 18px; color: #f1c40f;">
+            🏡 VƯỜN XOÀI NHÀ BÀ CHỦ
+        </div>
+        
+        <!-- Cây xoài keo -->
+        <img src="https://i.imgur.com/wK98NIn.jpeg" style="position: absolute; top: 45px; right: 10px; width: 160px; border-radius: 10px; border: 2px solid yellow;">
+        
+        <!-- Bé Masha -->
+        <img id="masha-steal" src="https://i.imgur.com/3c8q9vK.png" class="character" style="bottom: 110px; left: 20px; width: 110px;">
+        
+        <!-- Chú chó nằm gãi tai -->
+        <img id="dog-sleep" src="https://i.imgur.com/6U8Y7E0.png" class="character" style="bottom: 90px; right: 110px; width: 85px;">
+        
+        <!-- Bà chủ nhà -->
+        <img id="granny-house" src="https://i.imgur.com/PZp8oI2.jpeg" class="character" style="top: 110px; left: 15px; width: 100px; display: none; border-radius: 50%; border: 3px solid red;">
 
-def add_log(msg):
-    st.session_state.log.insert(0, msg)
+        <div class="dialog-box">
+            <div id="status-text" style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Bé Masha lén mò vào vườn... Chú chó đang thiu thiu ngủ.</div>
+            <button class="btn" onclick="stealMango()">🥭 Hái 1 quả xoài</button>
+            <button id="run-btn" class="btn btn-boost" style="display:none;" onclick="startChase()">🏃 ÔM XOÀI BỨT TỐC CHẠY!</button>
+        </div>
+    </div>
 
-st.markdown("<h1 class='main-title'>🥭 TRỘM XOÀI: CUỘC RƯỢT ĐUỔI NGHẸT THỞ 🐕💨</h1>", unsafe_allow_html=True)
+    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN ĐƯỜNG LÀNG -->
+    <div id="scene2" class="scene">
+        <canvas id="chaseCanvas" width="400" height="600"></canvas>
+        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 15px; text-align: left; font-size: 14px;">
+            🥭 Xoài: <span id="mango-count" style="color:#f1c40f; font-weight:bold;">0</span><br>
+            🏃 Đường: <span id="dist-count" style="color:#2ecc71; font-weight:bold;">0</span>/100m
+        </div>
+        
+        <div style="position: absolute; bottom: 12px; width: 100%; display: flex; justify-content: center; gap: 8px;">
+            <button class="btn" onclick="moveLeft()">⬅️ Trái</button>
+            <button class="btn btn-boost" onclick="useBoost()">⚡ TĂNG TỐC</button>
+            <button class="btn" onclick="moveRight()">Phải ➡️</button>
+        </div>
+    </div>
 
-# ================= 1. BẮT ĐẦU: LEO RÀO =================
-if st.session_state.state == 'START':
-    st.markdown("""
-    ### 🏡 Bên ngoài bờ rào nhà Ông Bảy
-    Cây xoài keo trĩu quả vàng ươm đang tỏa hương thơm phức qua hàng rào.
-    Bạn đang đứng nhìn thèm rỏ nước miếng...
-    """)
-    if st.button("🧗 Leo rào chui vào vườn xoài", use_container_width=True):
-        st.session_state.state = 'STEAL'
-        st.rerun()
+    <!-- CẢNH KẾT THÚC -->
+    <div id="scene-end" class="scene" style="background: #000; padding-top: 140px;">
+        <h1 id="end-title">GAME OVER</h1>
+        <p id="end-desc" style="font-size: 16px; padding: 0 20px; line-height: 1.5;"></p>
+        <button class="btn" onclick="location.reload()">🔄 Chơi lại từ đầu</button>
+    </div>
+</div>
 
-# ================= 2. MỞ ĐẦU: HÁI XOÀI & BỊ PHÁT HIỆN =================
-elif st.session_state.state == 'STEAL':
-    st.markdown("""
-    ### 🌳 Đang ở dưới gốc cây xoài!
-    Bạn nhẹ nhàng với tay hái từng quả xoài mọng nước...
-    """)
-    st.metric("🥭 Số xoài đang ôm trên tay", f"{st.session_state.xoai} quả")
+<script>
+    // Audio Synthesizer via Web Audio API (Tránh lỗi chặn CORS/Link audio chết)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'pluck') {
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'bark') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        } else if (type === 'boost') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'hit') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+    }
+
+    let mangoes = 0;
+    let dogAwake = false;
+    let canvas = document.getElementById('chaseCanvas');
+    let ctx = canvas.getContext('2d');
+    let playerLane = 1;
+    let distance = 0;
+    let gap = 15;
+    let gameInterval;
+    let speed = 3;
+    let obstacles = [];
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🥭 Hái thêm 1 quả nữa", use_container_width=True):
-            st.session_state.xoai += random.randint(2, 4)
-            st.rerun()
-    with col2:
-        if st.button("🚨 Ôm đống xoài chuồn thôi!", use_container_width=True) or st.session_state.xoai >= 5:
-            st.session_state.state = 'CHASE'
-            st.session_state.gap = 15
-            st.session_state.distance = 0
-            st.session_state.obstacle = random.choice(["Hòn đá to", "Hàng rào thấp", "Vũng bùn trơn"])
-            add_log("🐕 **GÂU GÂU GÂU!** Con chó Vàng cất tiếng sủa inh ỏi!")
-            add_log("👴 **Ông Bảy vung chổi:** 'Thằng kia! Đứng lại mauuu!'")
-            add_log("🏃 Bạn vội ôm chặt đống xoài vắt chân lên cổ chạy!")
-            st.rerun()
+    let bgRoad = new Image(); bgRoad.src = 'https://i.imgur.com/g8e1m5Z.jpeg';
+    let imgMasha = new Image(); imgMasha.src = 'https://i.imgur.com/3c8q9vK.png';
+    let imgGranny = new Image(); imgGranny.src = 'https://i.imgur.com/PZp8oI2.jpeg';
 
-# ================= 3. RƯỢT ĐUỔI (GAMEPLAY CHÍNH) =================
-elif st.session_state.state == 'CHASE':
-    # Hiển thị thông số
-    col1, col2, col3 = st.columns(3)
-    col1.metric("🥭 Xoài ôm trên tay", f"{st.session_state.xoai} quả")
-    col2.metric("🏃 Đã chạy được", f"{st.session_state.distance} / 100 m")
-    col3.metric("🐕 Khoảng cách chó & chủ nhà", f"{st.session_state.gap} m", delta_color="normal")
-    
-    # Thanh năng lượng Tăng tốc
-    st.progress(min(st.session_state.distance / 100, 1.0), text="Quãng đường thoát hiểm")
+    function stealMango() {
+        playSound('pluck');
+        mangoes += Math.floor(Math.random() * 2) + 1;
+        document.getElementById('status-text').innerHTML = "Bé Masha đã hái được <b>" + mangoes + "</b> quả xoài keo chín!";
+        
+        if (mangoes >= 3 && !dogAwake) {
+            dogAwake = true;
+            playSound('bark');
+            document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(10deg)";
+            document.getElementById('granny-house').style.display = "block";
+            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Chó sủa ầm ĩ! Bà chủ cầm chiếc dép thần thánh xông ra quát!";
+            document.getElementById('run-btn').style.display = "inline-block";
+        }
+    }
 
-    # Nhật ký diễn biến
-    if st.session_state.log:
-        st.markdown(f"<div class='story-box'>{st.session_state.log[0]}</div>", unsafe_allow_html=True)
-    
-    st.warning(f"⚠️ **CẢNH BÁO:** Phía trước có **{st.session_state.obstacle}**!")
+    function startChase() {
+        playSound('boost');
+        document.getElementById('scene1').classList.remove('active');
+        document.getElementById('scene2').classList.add('active');
+        document.getElementById('mango-count').innerText = mangoes;
+        gameInterval = setInterval(updateGame, 50);
+    }
 
-    # Các nút xử lý hành động
-    c1, c2, c3 = st.columns(3)
-    action = None
-    
-    with c1:
-        if st.button("🦘 Nhảy cao qua", use_container_width=True):
-            action = "NHAY"
-    with c2:
-        if st.button("🔄 Lách né sang bên", use_container_width=True):
-            action = "LACK"
-    with c3:
-        boost_label = f"⚡ TĂNG TỐC! ({st.session_state.boost} lần)"
-        if st.button(boost_label, use_container_width=True, disabled=(st.session_state.boost <= 0)):
-            action = "BOOST"
+    function moveLeft() { if(playerLane > 0) { playerLane--; playSound('pluck'); } }
+    function moveRight() { if(playerLane < 2) { playerLane++; playSound('pluck'); } }
+    function useBoost() {
+        playSound('boost');
+        speed = 8;
+        gap += 4;
+        setTimeout(() => { speed = 3; }, 1200);
+    }
 
-    if action:
-        # Xử lý logic
-        if action == "BOOST":
-            st.session_state.boost -= 1
-            st.session_state.distance += 25
-            st.session_state.gap += 8
-            add_log("🚀 **BẮT TỐC ĐỘ!** Bạn ôm đống xoài bứt tốc xé gió, bỏ xa chó và chủ nhà!")
-        else:
-            # Tỷ lệ né chướng ngại vật thành công
-            correct_action = "NHAY" if st.session_state.obstacle in ["Hòn đá to", "Vũng bùn trơn"] else "LACK"
+    function updateGame() {
+        distance += 0.5;
+        document.getElementById('dist-count').innerText = Math.floor(distance);
+        
+        if (Math.random() < 0.09) {
+            obstacles.push({ lane: Math.floor(Math.random() * 3), y: -50, type: Math.random() > 0.5 ? '🗿 Đá' : '🪵 Củi' });
+        }
+        
+        ctx.drawImage(bgRoad, 0, 0, canvas.width, canvas.height);
+        let lanesX = [80, 180, 280];
+        
+        ctx.font = "28px Arial";
+        for (let i = 0; i < obstacles.length; i++) {
+            let obs = obstacles[i];
+            obs.y += speed * 2.5;
+            ctx.fillText(obs.type, lanesX[obs.lane] - 15, obs.y);
             
-            if action == correct_action:
-                st.session_state.distance += 15
-                st.session_state.gap += 2
-                add_log(f"✨ Bạn xử lý cực nhanh: {action} thành công qua {st.session_state.obstacle}!")
-            else:
-                st.session_state.distance += 5
-                st.session_state.gap -= 6
-                st.session_state.xoai = max(0, st.session_state.xoai - 1)
-                add_log(f"💥 **RẦM!** Bạn vấp phải {st.session_state.obstacle}, rơi mất 1 quả xoài và bị đuổi sát đít!")
+            if (obs.y > 450 && obs.y < 530 && obs.lane === playerLane) {
+                playSound('hit');
+                gap -= 4;
+                mangoes = Math.max(0, mangoes - 1);
+                document.getElementById('mango-count').innerText = mangoes;
+                obstacles.splice(i, 1);
+            }
+        }
+        
+        obstacles = obstacles.filter(o => o.y < 650);
 
-        # Tạo chướng ngại vật mới
-        st.session_state.obstacle = random.choice(["Hòn đá to", "Hàng rào thấp", "Vũng bùn trơn", "Bụi rậm Gai"])
+        // Hiệu ứng Bé Masha chạy
+        ctx.drawImage(imgMasha, lanesX[playerLane] - 25, 470, 60, 80);
+        
+        // Hiệu ứng Bà chủ rượt theo sau
+        let chaserY = 540 + (gap * 3.5);
+        ctx.drawImage(imgGranny, lanesX[playerLane] - 25, Math.min(chaserY, 560), 50, 65);
 
-        # Kiểm tra thắng / thua
-        if st.session_state.gap <= 0:
-            st.session_state.state = 'GAMEOVER'
-        elif st.session_state.distance >= 100:
-            st.session_state.state = 'WIN'
-            
-        st.rerun()
+        if (gap <= 0) {
+            endGame(false);
+        } else if (distance >= 100) {
+            endGame(true);
+        }
+    }
 
-# ================= 4. KẾT THÚC: THUA =================
-elif st.session_state.state == 'GAMEOVER':
-    st.error("😭 **BỊ BẮT RỒI!**")
-    st.markdown("""
-    Con chó Vàng đớp trúng gấu quần, Ông Bảy chạy tới xách tai bạn lên!
-    
-    * **Thiệt hại:** Mất toàn bộ xoài + Ăn 3 chổi vào mông.
-    """)
-    if st.button("🔄 Thử lại trận khác!", use_container_width=True):
-        st.session_state.state = 'START'
-        st.session_state.xoai = 0
-        st.session_state.log = []
-        st.rerun()
+    function endGame(isWin) {
+        clearInterval(gameInterval);
+        document.getElementById('scene2').classList.remove('active');
+        document.getElementById('scene-end').classList.add('active');
+        
+        if (isWin) {
+            playSound('boost');
+            document.getElementById('end-title').innerHTML = "🎉 THẮNG RỰC RỠ!";
+            document.getElementById('end-title').style.color = "#2ecc71";
+            document.getElementById('end-desc').innerHTML = "Bé Masha đã ôm trọn <b>" + mangoes + " quả xoài</b> chạy thoát về xóm!";
+        } else {
+            playSound('hit');
+            document.getElementById('end-title').innerHTML = "😭 BỊ BẮT RỒI!";
+            document.getElementById('end-title').style.color = "#e74c3c";
+            document.getElementById('end-desc').innerHTML = "Bà chủ cầm chiếc chiếc dép thần thánh vụt trúng Masha! Rơi mất sạch xoài!";
+        }
+    }
+</script>
 
-# ================= 5. KẾT THÚC: THẮNG =================
-elif st.session_state.state == 'WIN':
-    st.balloons()
-    st.success("🎉 **TẨU THOÁT THÀNH CÔNG!**")
-    st.markdown(f"""
-    Bạn đã chạy thoát khỏi tầm mắt của Ông Bảy và con chó Vàng!
-    
-    🏆 **Thành quả:** Bắt trọn **{st.session_state.xoai} quả xoài keo** chín ngon lành!
-    """)
-    if st.button("🎮 Chơi lại màn mới", use_container_width=True):
-        st.session_state.state = 'START'
-        st.session_state.xoai = 0
-        st.session_state.log = []
-        st.rerun()
+</body>
+</html>
+"""
+
+components.html(html_code, height=630)
