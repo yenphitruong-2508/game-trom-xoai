@@ -21,7 +21,7 @@ html_code = """
         position: relative;
         width: 100%;
         max-width: 450px;
-        height: 600px;
+        height: 620px;
         margin: 0 auto;
         border: 4px solid #f1c40f;
         border-radius: 15px;
@@ -45,10 +45,10 @@ html_code = """
         background: linear-gradient(135deg, #f39c12, #e67e22);
         color: white;
         border: none;
-        padding: 10px 18px;
+        padding: 12px 20px;
         font-size: 16px;
         font-weight: bold;
-        border-radius: 20px;
+        border-radius: 25px;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         margin: 4px;
@@ -84,22 +84,22 @@ html_code = """
 
 <div id="game-container">
     <!-- CẢNH 1: VƯỜN XOÀI NHÀ BÀ CHỦ -->
-    <div id="scene1" class="scene active" style="background-image: url('https://i.imgur.com/8QzX8aR.jpeg');">
+    <div id="scene1" class="scene active" style="background-image: url('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');">
         <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 18px; color: #f1c40f;">
             🏡 VƯỜN XOÀI NHÀ BÀ CHỦ
         </div>
         
         <!-- Cây xoài keo -->
-        <img src="https://i.imgur.com/wK98NIn.jpeg" style="position: absolute; top: 45px; right: 10px; width: 160px; border-radius: 10px; border: 2px solid yellow;">
+        <img src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap.jpg" style="position: absolute; top: 45px; right: 10px; width: 150px; height: 110px; border-radius: 10px; border: 2px solid yellow; object-fit: cover;">
         
         <!-- Bé Masha -->
-        <img id="masha-steal" src="https://i.imgur.com/3c8q9vK.png" class="character" style="bottom: 110px; left: 20px; width: 110px;">
+        <img id="masha-steal" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg" class="character" style="bottom: 110px; left: 20px; width: 100px; border-radius: 10px;">
         
         <!-- Chú chó nằm gãi tai -->
-        <img id="dog-sleep" src="https://i.imgur.com/6U8Y7E0.png" class="character" style="bottom: 90px; right: 110px; width: 85px;">
+        <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" class="character" style="bottom: 90px; right: 100px; width: 80px; border-radius: 10px;">
         
         <!-- Bà chủ nhà -->
-        <img id="granny-house" src="https://i.imgur.com/PZp8oI2.jpeg" class="character" style="top: 110px; left: 15px; width: 100px; display: none; border-radius: 50%; border: 3px solid red;">
+        <img id="granny-house" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" class="character" style="top: 110px; left: 15px; width: 90px; display: none; border-radius: 10px; border: 3px solid red;">
 
         <div class="dialog-box">
             <div id="status-text" style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Bé Masha lén mò vào vườn... Chú chó đang thiu thiu ngủ.</div>
@@ -108,12 +108,12 @@ html_code = """
         </div>
     </div>
 
-    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN ĐƯỜNG LÀNG -->
+    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN ĐƯỜNG LÀNG (SUBWAY SURFERS STYLE) -->
     <div id="scene2" class="scene">
         <canvas id="chaseCanvas" width="400" height="600"></canvas>
-        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 15px; text-align: left; font-size: 14px;">
+        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 15px; text-align: left; font-size: 14px; border: 1px solid #f1c40f;">
             🥭 Xoài: <span id="mango-count" style="color:#f1c40f; font-weight:bold;">0</span><br>
-            🏃 Đường: <span id="dist-count" style="color:#2ecc71; font-weight:bold;">0</span>/100m
+            🏃 Quãng đường: <span id="dist-count" style="color:#2ecc71; font-weight:bold;">0</span>/100m
         </div>
         
         <div style="position: absolute; bottom: 12px; width: 100%; display: flex; justify-content: center; gap: 8px;">
@@ -132,7 +132,7 @@ html_code = """
 </div>
 
 <script>
-    // Audio Synthesizer via Web Audio API (Tránh lỗi chặn CORS/Link audio chết)
+    // Audio Synthesizer via Web Audio API
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSound(type) {
@@ -185,9 +185,10 @@ html_code = """
     let speed = 3;
     let obstacles = [];
     
-    let bgRoad = new Image(); bgRoad.src = 'https://i.imgur.com/g8e1m5Z.jpeg';
-    let imgMasha = new Image(); imgMasha.src = 'https://i.imgur.com/3c8q9vK.png';
-    let imgGranny = new Image(); imgGranny.src = 'https://i.imgur.com/PZp8oI2.jpeg';
+    // Load ảnh từ kho GitHub của bạn
+    let bgRoad = new Image(); bgRoad.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap6.jpg';
+    let imgMasha = new Image(); imgMasha.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg';
+    let imgGranny = new Image(); imgGranny.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg';
 
     function stealMango() {
         playSound('pluck');
@@ -249,12 +250,12 @@ html_code = """
         
         obstacles = obstacles.filter(o => o.y < 650);
 
-        // Hiệu ứng Bé Masha chạy
-        ctx.drawImage(imgMasha, lanesX[playerLane] - 25, 470, 60, 80);
+        // Hiệu ứng Bé Masha chạy né 3 làn đường
+        ctx.drawImage(imgMasha, lanesX[playerLane] - 25, 470, 50, 65);
         
         // Hiệu ứng Bà chủ rượt theo sau
         let chaserY = 540 + (gap * 3.5);
-        ctx.drawImage(imgGranny, lanesX[playerLane] - 25, Math.min(chaserY, 560), 50, 65);
+        ctx.drawImage(imgGranny, lanesX[playerLane] - 25, Math.min(chaserY, 560), 45, 60);
 
         if (gap <= 0) {
             endGame(false);
@@ -286,4 +287,4 @@ html_code = """
 </html>
 """
 
-components.html(html_code, height=630)
+components.html(html_code, height=640)
