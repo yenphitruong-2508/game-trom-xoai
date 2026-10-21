@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Trộm Xoài 3D - Cuộc Rượt Đuổi Đường Làng", page_icon="🥭", layout="centered")
+st.set_page_config(page_title="Trộm xoài nhà bà hàng xóm", page_icon="🥭", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -58,7 +58,7 @@ html_code = """
     <!-- CẢNH 1: VƯỜN XOÀI (LÉN HÁI XOÀI) -->
     <div id="scene1" class="scene active" style="background-image: url('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');">
         <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 18px; color: #f1c40f;">
-            🏡 VƯỜN XOÀI NHÀ BÀ CHỦ
+            🏡 TRỘM XOÀI NHÀ BÀ HÀNG XÓM
         </div>
         
         <!-- Cây xoài keo trĩu quả -->
@@ -70,7 +70,7 @@ html_code = """
         <!-- Chú chó đang nằm gãi tai -->
         <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" style="position: absolute; bottom: 90px; right: 90px; width: 85px; mix-blend-mode: multiply; transition: transform 0.3s;">
         
-        <!-- Bà chủ nhà -->
+        <!-- Bà hàng xóm -->
         <img id="granny-house" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" style="position: absolute; top: 110px; left: 15px; width: 95px; display: none; mix-blend-mode: multiply;">
 
         <div class="dialog-box">
@@ -80,7 +80,7 @@ html_code = """
         </div>
     </div>
 
-    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN CON ĐƯỜNG LÀNG THỰC TẾ -->
+    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN ĐƯỜNG LÀNG -->
     <div id="scene2" class="scene">
         <canvas id="chaseCanvas" width="400" height="600"></canvas>
         <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 6px 14px; border-radius: 15px; text-align: left; font-size: 14px; border: 1px solid #f1c40f;">
@@ -116,11 +116,12 @@ html_code = """
     let roadY = 0;
     let obstacles = [];
     
-    // Load hình ảnh
     let bgRoad = new Image(); bgRoad.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap6.jpg';
     let imgMasha = new Image(); imgMasha.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg';
     let imgGranny = new Image(); imgGranny.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg';
     let imgDog = new Image(); imgDog.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg';
+
+    const obstacleTypes = ['🌿 Bụi cỏ', '🪨 Tảng đá', '🪵 Khúc gỗ', '🌲 Gốc cây'];
 
     function stealMango() {
         mangoes += Math.floor(Math.random() * 2) + 1;
@@ -130,7 +131,7 @@ html_code = """
             dogAwake = true;
             document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(15deg)";
             document.getElementById('granny-house').style.display = "block";
-            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Chó sủa ầm ĩ! Bà chủ cầm chiếc dép xông ra quát lớn!";
+            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Chó sủa ầm ĩ! Bà hàng xóm cầm chiếc dép xông ra quát lớn!";
             document.getElementById('run-btn').style.display = "inline-block";
         }
     }
@@ -154,7 +155,6 @@ html_code = """
         distance += 0.3;
         document.getElementById('dist-count').innerText = Math.floor(distance);
         
-        // Cuộn con đường btap6.jpg mượt mà
         roadY += speed * 2;
         if (roadY >= canvas.height) roadY = 0;
         
@@ -163,18 +163,17 @@ html_code = """
         
         let lanesX = [90, 200, 310];
         
-        // Sinh chướng ngại vật ngẫu nhiên
         if (Math.random() < 0.08) {
-            obstacles.push({ lane: Math.floor(Math.random() * 3), y: -50, type: Math.random() > 0.5 ? '🪨 Đá' : '🪵 Củi' });
+            let randomObs = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            obstacles.push({ lane: Math.floor(Math.random() * 3), y: -50, type: randomObs });
         }
         
-        ctx.font = "26px Arial";
+        ctx.font = "22px Arial";
         for (let i = 0; i < obstacles.length; i++) {
             let obs = obstacles[i];
             obs.y += speed * 1.8;
-            ctx.fillText(obs.type, lanesX[obs.lane] - 15, obs.y);
+            ctx.fillText(obs.type, lanesX[obs.lane] - 30, obs.y);
             
-            // Va chạm
             if (obs.y > 440 && obs.y < 510 && obs.lane === playerLane) {
                 gap -= 4;
                 mangoes = Math.max(0, mangoes - 1);
@@ -188,12 +187,11 @@ html_code = """
         // Vẽ Bé Masha
         ctx.drawImage(imgMasha, lanesX[playerLane] - 25, 460, 55, 70);
         
-        // Vẽ Bà chủ nhà & Chó rượt theo phía sau
+        // Vẽ Bà hàng xóm & Chú chó rượt theo sau
         let chaserY = 460 + (gap * 4);
         ctx.drawImage(imgGranny, lanesX[playerLane] - 25, Math.min(chaserY, 560), 50, 65);
         ctx.drawImage(imgDog, lanesX[playerLane] + 25, Math.min(chaserY + 10, 570), 40, 45);
 
-        // Đụng chướng ngại vật liên tục bị bắt -> GameOver
         if (gap <= 0) {
             endGame();
         }
@@ -203,7 +201,7 @@ html_code = """
         clearInterval(gameInterval);
         document.getElementById('scene2').classList.remove('active');
         document.getElementById('scene-end').classList.add('active');
-        document.getElementById('end-desc').innerHTML = "Bà chủ cầm chiếc dép vụt trúng Masha! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và giữ lại được <b>" + mangoes + " quả xoài</b>!";
+        document.getElementById('end-desc').innerHTML = "Bà hàng xóm cầm chiếc dép vụt trúng Masha do vướng phải chướng ngại vật! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và giữ lại được <b>" + mangoes + " quả xoài</b>!";
     }
 </script>
 
