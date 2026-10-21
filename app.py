@@ -1,147 +1,157 @@
-import random
 import streamlit as st
+import random
+import time
 
-st.set_page_config(page_title="Trộm Xoài Bị Rượt!", page_icon="🥭", layout="centered")
+st.set_page_config(page_title="Trộm Xoài Bị Rượt", page_icon="🥭", layout="centered")
 
-st.title("🥭 HÀNH TRÌNH TRỘM XOÀI BỊ CHỦ NHÀ RƯỢT 🐕")
-st.caption("Game nhập vai hài hước dựng bằng Streamlit")
+# CSS tạo giao diện sống động
+st.markdown("""
+<style>
+    .main-title { text-align: center; color: #FF4B4B; font-weight: bold; }
+    .status-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+    .story-box { background-color: #fff3cd; border-left: 5px solid #ffeba2; padding: 15px; border-radius: 5px; font-size: 18px; margin-bottom: 20px; }
+</style>
+""", unsafe_allow_html=True)
 
-# Khởi tạo trạng thái Game
-if "game_started" not in st.session_state:
-  st.session_state.game_started = False
-if "xoai_count" not in st.session_state:
-  st.session_state.xoai_count = 0
-if "stamina" not in st.session_state:
-  st.session_state.stamina = 100
-if "distance" not in st.session_state:
-  st.session_state.distance = 20
-if "game_over" not in st.session_state:
-  st.session_state.game_over = False
-if "win" not in st.session_state:
-  st.session_state.win = False
-if "log" not in st.session_state:
-  st.session_state.log = []
+# Khởi tạo trạng thái Game (Session State)
+if 'state' not in st.session_state:
+    st.session_state.state = 'START' # START, STEAL, CHASE, GAMEOVER, WIN
+    st.session_state.xoai = 0
+    st.session_state.distance = 0 # Quãng đường đã chạy (Mục tiêu 100m)
+    st.session_state.gap = 15 # Khoảng cách với chủ nhà/chó (mét)
+    st.session_state.boost = 2 # Số lần bấm Tăng tốc
+    st.session_state.log = []
+    st.session_state.obstacle = None
 
+def add_log(msg):
+    st.session_state.log.insert(0, msg)
 
-def reset_game():
-  st.session_state.game_started = True
-  st.session_state.xoai_count = 0
-  st.session_state.stamina = 100
-  st.session_state.distance = 20
-  st.session_state.game_over = False
-  st.session_state.win = False
-  st.session_state.log = [
-      "🔥 Bạn đã leo lên cây xoài nhà ông Bảy. Xoài trĩu quả vàng ươm!"
-  ]
+st.markdown("<h1 class='main-title'>🥭 TRỘM XOÀI: CUỘC RƯỢT ĐUỔI NGHẸT THỞ 🐕💨</h1>", unsafe_allow_html=True)
 
+# ================= 1. BẮT ĐẦU: LEO RÀO =================
+if st.session_state.state == 'START':
+    st.markdown("""
+    ### 🏡 Bên ngoài bờ rào nhà Ông Bảy
+    Cây xoài keo trĩu quả vàng ươm đang tỏa hương thơm phức qua hàng rào.
+    Bạn đang đứng nhìn thèm rỏ nước miếng...
+    """)
+    if st.button("🧗 Leo rào chui vào vườn xoài", use_container_width=True):
+        st.session_state.state = 'STEAL'
+        st.rerun()
 
-# Màn hình bắt đầu
-if not st.session_state.game_started:
-  st.write(
-      "**Mục tiêu:** Trộm càng nhiều xoài càng tốt và tẩu thoát an toàn về"
-      " nhà!"
-  )
-  st.write(
-      "**Cảnh báo:** Ông Bảy có cầm chổi lông gà và thả cả chó Becgie đuổi theo"
-      " đấy!"
-  )
-  if st.button("🚀 Bắt đầu trộm xoài!", type="primary"):
-    reset_game()
-    st.rerun()
+# ================= 2. MỞ ĐẦU: HÁI XOÀI & BỊ PHÁT HIỆN =================
+elif st.session_state.state == 'STEAL':
+    st.markdown("""
+    ### 🌳 Đang ở dưới gốc cây xoài!
+    Bạn nhẹ nhàng với tay hái từng quả xoài mọng nước...
+    """)
+    st.metric("🥭 Số xoài đang ôm trên tay", f"{st.session_state.xoai} quả")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🥭 Hái thêm 1 quả nữa", use_container_width=True):
+            st.session_state.xoai += random.randint(2, 4)
+            st.rerun()
+    with col2:
+        if st.button("🚨 Ôm đống xoài chuồn thôi!", use_container_width=True) or st.session_state.xoai >= 5:
+            st.session_state.state = 'CHASE'
+            st.session_state.gap = 15
+            st.session_state.distance = 0
+            st.session_state.obstacle = random.choice(["Hòn đá to", "Hàng rào thấp", "Vũng bùn trơn"])
+            add_log("🐕 **GÂU GÂU GÂU!** Con chó Vàng cất tiếng sủa inh ỏi!")
+            add_log("👴 **Ông Bảy vung chổi:** 'Thằng kia! Đứng lại mauuu!'")
+            add_log("🏃 Bạn vội ôm chặt đống xoài vắt chân lên cổ chạy!")
+            st.rerun()
 
-# Màn hình chơi game
-else:
-  st.subheader("📜 Diễn biến:")
-  for msg in st.session_state.log[-4:]:
-    st.write(f"- {msg}")
+# ================= 3. RƯỢT ĐUỔI (GAMEPLAY CHÍNH) =================
+elif st.session_state.state == 'CHASE':
+    # Hiển thị thông số
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🥭 Xoài ôm trên tay", f"{st.session_state.xoai} quả")
+    col2.metric("🏃 Đã chạy được", f"{st.session_state.distance} / 100 m")
+    col3.metric("🐕 Khoảng cách chó & chủ nhà", f"{st.session_state.gap} m", delta_color="normal")
+    
+    # Thanh năng lượng Tăng tốc
+    st.progress(min(st.session_state.distance / 100, 1.0), text="Quãng đường thoát hiểm")
 
-  st.divider()
+    # Nhật ký diễn biến
+    if st.session_state.log:
+        st.markdown(f"<div class='story-box'>{st.session_state.log[0]}</div>", unsafe_allow_html=True)
+    
+    st.warning(f"⚠️ **CẢNH BÁO:** Phía trước có **{st.session_state.obstacle}**!")
 
-  col1, col2, col3 = st.columns(3)
-  col1.metric("🥭 Số xoài hái được", f"{st.session_state.xoai_count} quả")
-  col2.metric("⚡ Thể lực", f"{st.session_state.stamina}%")
-  col3.metric(
-      "🏃 Cự ly với chủ nhà",
-      f"{st.session_state.distance} m",
-      delta_color="inverse",
-  )
+    # Các nút xử lý hành động
+    c1, c2, c3 = st.columns(3)
+    action = None
+    
+    with c1:
+        if st.button("🦘 Nhảy cao qua", use_container_width=True):
+            action = "NHAY"
+    with c2:
+        if st.button("🔄 Lách né sang bên", use_container_width=True):
+            action = "LACK"
+    with c3:
+        boost_label = f"⚡ TĂNG TỐC! ({st.session_state.boost} lần)"
+        if st.button(boost_label, use_container_width=True, disabled=(st.session_state.boost <= 0)):
+            action = "BOOST"
 
-  if st.session_state.distance < 10:
-    st.error("🚨 CHỦ NHÀ ĐÃ Ở NGAY SAU LƯNG BẠN! CHẠY MAU!")
-  elif st.session_state.distance < 20:
-    st.warning("⚠️ Đang nghe tiếng chó sủi 'Gâu gâu' rất gần!")
+    if action:
+        # Xử lý logic
+        if action == "BOOST":
+            st.session_state.boost -= 1
+            st.session_state.distance += 25
+            st.session_state.gap += 8
+            add_log("🚀 **BẮT TỐC ĐỘ!** Bạn ôm đống xoài bứt tốc xé gió, bỏ xa chó và chủ nhà!")
+        else:
+            # Tỷ lệ né chướng ngại vật thành công
+            correct_action = "NHAY" if st.session_state.obstacle in ["Hòn đá to", "Vũng bùn trơn"] else "LACK"
+            
+            if action == correct_action:
+                st.session_state.distance += 15
+                st.session_state.gap += 2
+                add_log(f"✨ Bạn xử lý cực nhanh: {action} thành công qua {st.session_state.obstacle}!")
+            else:
+                st.session_state.distance += 5
+                st.session_state.gap -= 6
+                st.session_state.xoai = max(0, st.session_state.xoai - 1)
+                add_log(f"💥 **RẦM!** Bạn vấp phải {st.session_state.obstacle}, rơi mất 1 quả xoài và bị đuổi sát đít!")
 
-  st.divider()
+        # Tạo chướng ngại vật mới
+        st.session_state.obstacle = random.choice(["Hòn đá to", "Hàng rào thấp", "Vũng bùn trơn", "Bụi rậm Gai"])
 
-  if st.session_state.game_over:
-    if st.session_state.win:
-      st.balloons()
-      st.success(
-          "🎉 **BẠN ĐÃ TẨU THOÁT THÀNH CÔNG!**\n\n"
-          f"Bạn đã mang về **{st.session_state.xoai_count} quả xoài** ngon lành!"
-      )
-    else:
-      st.error(
-          "💥 **BẠN ĐÃ BỊ BẮT!**\n\n"
-          "Ông Bảy đã gõ chổi vô mông bạn và tịch thu toàn bộ số xoài!"
-      )
+        # Kiểm tra thắng / thua
+        if st.session_state.gap <= 0:
+            st.session_state.state = 'GAMEOVER'
+        elif st.session_state.distance >= 100:
+            st.session_state.state = 'WIN'
+            
+        st.rerun()
 
-    if st.button("🔄 Chơi lại trận khác"):
-      reset_game()
-      st.rerun()
+# ================= 4. KẾT THÚC: THUA =================
+elif st.session_state.state == 'GAMEOVER':
+    st.error("😭 **BỊ BẮT RỒI!**")
+    st.markdown("""
+    Con chó Vàng đớp trúng gấu quần, Ông Bảy chạy tới xách tai bạn lên!
+    
+    * **Thiệt hại:** Mất toàn bộ xoài + Ăn 3 chổi vào mông.
+    """)
+    if st.button("🔄 Thử lại trận khác!", use_container_width=True):
+        st.session_state.state = 'START'
+        st.session_state.xoai = 0
+        st.session_state.log = []
+        st.rerun()
 
-  else:
-    st.subheader("🎯 Bạn sẽ làm gì tiếp theo?")
-    c1, c2, c3, c4 = st.columns(4)
-
-    if c1.button("🥭 Hái xoài"):
-      hái = random.randint(1, 3)
-      st.session_state.xoai_count += hái
-      bị_đuổi = random.randint(3, 6)
-      st.session_state.distance -= bị_đuổi
-      st.session_state.log.append(
-          f"Bạn hái được {hái} quả xoài! Nhưng chủ nhà áp sát thêm {bị_đuổi}m."
-      )
-
-      if st.session_state.distance <= 0:
-        st.session_state.game_over = True
-      st.rerun()
-
-    if c2.button("🏃 Chạy thục mạng"):
-      if st.session_state.stamina >= 15:
-        st.session_state.stamina -= 15
-        tiến = random.randint(5, 9)
-        st.session_state.distance += tiến
-        st.session_state.log.append(
-            f"Bạn chạy thục mạng, tạo khoảng cách thêm {tiến}m!"
-        )
-
-        if st.session_state.distance >= 40:
-          st.session_state.win = True
-          st.session_state.game_over = True
-      else:
-        st.session_state.log.append("❌ Bạn đã quá mệt!")
-      st.rerun()
-
-    if c3.button("💥 Ném xoài dụ chó"):
-      if st.session_state.xoai_count > 0:
-        st.session_state.xoai_count -= 1
-        st.session_state.distance += 6
-        st.session_state.log.append(
-            "Bạn ném 1 quả xoài ra xa dụ con chó, chạy xa thêm 6m!"
-        )
-      else:
-        st.session_state.log.append("❌ Bạn không còn xoài để ném!")
-      st.rerun()
-
-    if c4.button("😮‍💨 Nghỉ lấy sức"):
-      st.session_state.stamina = min(100, st.session_state.stamina + 25)
-      bị_đuổi = random.randint(4, 7)
-      st.session_state.distance -= bị_đuổi
-      st.session_state.log.append(
-          f"Bạn nghỉ lấy sức (+25%). Chủ nhà tiến lại thêm {bị_đuổi}m!"
-      )
-
-      if st.session_state.distance <= 0:
-        st.session_state.game_over = True
-      st.rerun()
+# ================= 5. KẾT THÚC: THẮNG =================
+elif st.session_state.state == 'WIN':
+    st.balloons()
+    st.success("🎉 **TẨU THOÁT THÀNH CÔNG!**")
+    st.markdown(f"""
+    Bạn đã chạy thoát khỏi tầm mắt của Ông Bảy và con chó Vàng!
+    
+    🏆 **Thành quả:** Bắt trọn **{st.session_state.xoai} quả xoài keo** chín ngon lành!
+    """)
+    if st.button("🎮 Chơi lại màn mới", use_container_width=True):
+        st.session_state.state = 'START'
+        st.session_state.xoai = 0
+        st.session_state.log = []
+        st.rerun()
