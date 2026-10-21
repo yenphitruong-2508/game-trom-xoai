@@ -1,290 +1,239 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Trộm Xoài Rượt Đuổi 3D", page_icon="🥭", layout="centered")
+st.set_page_config(page_title="Trộm Xoài 3D Subway Surfers", page_icon="🥭", layout="centered")
 
-html_code = """
+html_3d_code = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        text-align: center;
-        background-color: #1a1a2e;
-        color: white;
-        margin: 0;
-        padding: 5px;
+    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+    #ui {
+        position: absolute; top: 10px; left: 10px;
+        color: #fff; font-size: 20px; font-weight: bold;
+        text-shadow: 2px 2px 4px #000; z-index: 10;
     }
-    #game-container {
-        position: relative;
-        width: 100%;
-        max-width: 450px;
-        height: 620px;
-        margin: 0 auto;
-        border: 4px solid #f1c40f;
-        border-radius: 15px;
-        overflow: hidden;
-        background-color: #16213e;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    #msg {
+        position: absolute; top: 40%; width: 100%; text-align: center;
+        color: #ffeb3b; font-size: 32px; font-weight: bold;
+        text-shadow: 3px 3px 6px #000; display: none; z-index: 10;
     }
-    .scene {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        display: none;
-        background-size: cover;
-        background-position: center;
+    .controls {
+        position: absolute; bottom: 20px; width: 100%;
+        display: flex; justify-content: center; gap: 15px; z-index: 10;
     }
-    .active { display: block; }
-    
     .btn {
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 16px;
-        font-weight: bold;
-        border-radius: 25px;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        margin: 4px;
-        transition: transform 0.1s;
+        background: #ff9800; color: white; border: none;
+        padding: 12px 24px; font-size: 18px; font-weight: bold;
+        border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-    .btn:active { transform: scale(0.92); }
-    .btn-boost { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-    
-    .character {
-        position: absolute;
-        transition: all 0.2s ease;
-    }
-    
-    .dialog-box {
-        position: absolute;
-        bottom: 15px;
-        left: 5%;
-        width: 90%;
-        background: rgba(0,0,0,0.85);
-        border: 2px solid #f1c40f;
-        border-radius: 10px;
-        padding: 10px;
-        box-sizing: border-box;
-    }
-
-    #chaseCanvas {
-        width: 100%;
-        height: 100%;
-    }
+    .btn-boost { background: #f44336; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<div id="game-container">
-    <!-- CẢNH 1: VƯỜN XOÀI NHÀ BÀ CHỦ -->
-    <div id="scene1" class="scene active" style="background-image: url('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');">
-        <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 18px; color: #f1c40f;">
-            🏡 VƯỜN XOÀI NHÀ BÀ CHỦ
-        </div>
-        
-        <!-- Cây xoài keo -->
-        <img src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap.jpg" style="position: absolute; top: 45px; right: 10px; width: 150px; height: 110px; border-radius: 10px; border: 2px solid yellow; object-fit: cover;">
-        
-        <!-- Bé Masha -->
-        <img id="masha-steal" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg" class="character" style="bottom: 110px; left: 20px; width: 100px; border-radius: 10px;">
-        
-        <!-- Chú chó nằm gãi tai -->
-        <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" class="character" style="bottom: 90px; right: 100px; width: 80px; border-radius: 10px;">
-        
-        <!-- Bà chủ nhà -->
-        <img id="granny-house" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" class="character" style="top: 110px; left: 15px; width: 90px; display: none; border-radius: 10px; border: 3px solid red;">
+<div id="ui">🥭 Xoài: <span id="score">0</span> | 🏃 Quãng đường: <span id="dist">0</span>m</div>
+<div id="msg">BÀ CHỦ & CHÓ BẮT ĐƯỢC RỒI!<br><br><button class="btn" onclick="resetGame()">🎮 CHƠI LẠI</button></div>
 
-        <div class="dialog-box">
-            <div id="status-text" style="color: #f1c40f; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Bé Masha lén mò vào vườn... Chú chó đang thiu thiu ngủ.</div>
-            <button class="btn" onclick="stealMango()">🥭 Hái 1 quả xoài</button>
-            <button id="run-btn" class="btn btn-boost" style="display:none;" onclick="startChase()">🏃 ÔM XOÀI BỨT TỐC CHẠY!</button>
-        </div>
-    </div>
-
-    <!-- CẢNH 2: RƯỢT ĐUỔI TRÊN ĐƯỜNG LÀNG (SUBWAY SURFERS STYLE) -->
-    <div id="scene2" class="scene">
-        <canvas id="chaseCanvas" width="400" height="600"></canvas>
-        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 15px; text-align: left; font-size: 14px; border: 1px solid #f1c40f;">
-            🥭 Xoài: <span id="mango-count" style="color:#f1c40f; font-weight:bold;">0</span><br>
-            🏃 Quãng đường: <span id="dist-count" style="color:#2ecc71; font-weight:bold;">0</span>/100m
-        </div>
-        
-        <div style="position: absolute; bottom: 12px; width: 100%; display: flex; justify-content: center; gap: 8px;">
-            <button class="btn" onclick="moveLeft()">⬅️ Trái</button>
-            <button class="btn btn-boost" onclick="useBoost()">⚡ TĂNG TỐC</button>
-            <button class="btn" onclick="moveRight()">Phải ➡️</button>
-        </div>
-    </div>
-
-    <!-- CẢNH KẾT THÚC -->
-    <div id="scene-end" class="scene" style="background: #000; padding-top: 140px;">
-        <h1 id="end-title">GAME OVER</h1>
-        <p id="end-desc" style="font-size: 16px; padding: 0 20px; line-height: 1.5;"></p>
-        <button class="btn" onclick="location.reload()">🔄 Chơi lại từ đầu</button>
-    </div>
+<div class="controls">
+    <button class="btn" onclick="moveLeft()">⬅️ TRÁI</button>
+    <button class="btn btn-boost" onclick="jump()">🦘 NHẢY</button>
+    <button class="btn" onclick="moveRight()">PHẢI ➡️</button>
 </div>
 
 <script>
-    // Audio Synthesizer via Web Audio API
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let scene, camera, renderer;
+    let player, chaser, dog;
+    let lanes = [-2, 0, 2];
+    let currentLane = 1;
+    let isJumping = false, jumpSpeed = 0;
+    let score = 0, distance = 0, speed = 0.3;
+    let obstacles = [], mangoes = [];
+    let isGameOver = false;
 
-    function playSound(type) {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 20, 80);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 8);
+        camera.rotation.x = -0.3;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Ánh sáng
+        let light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 7);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x666666));
+
+        // Con đường 3D
+        let roadGeo = new THREE.PlaneGeometry(8, 200);
+        let roadMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+        let road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.z = -80;
+        scene.add(road);
+
+        // Đường ray / Làn đường
+        for (let i = -2; i <= 2; i += 2) {
+            let railGeo = new THREE.BoxGeometry(0.1, 0.1, 200);
+            let railMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+            let rail = new THREE.Mesh(railGeo, railMat);
+            rail.position.set(i, 0.05, -80);
+            scene.add(rail);
         }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
 
-        if (type === 'pluck') {
-            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-        } else if (type === 'bark') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-        } else if (type === 'boost') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-        } else if (type === 'hit') {
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.2);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        // Nhân vật chính (Bé Masha - Khối 3D đại diện)
+        let playerGeo = new THREE.BoxGeometry(0.8, 1.4, 0.8);
+        let playerMat = new THREE.MeshPhongMaterial({ color: 0x9c27b0 }); // Màu tím áo Masha
+        player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.set(lanes[currentLane], 0.7, 0);
+        scene.add(player);
+
+        // Bà chủ nhà đuổi theo sau
+        let chaserGeo = new THREE.BoxGeometry(1, 1.6, 1);
+        let chaserMat = new THREE.MeshPhongMaterial({ color: 0x2196f3 });
+        chaser = new THREE.Mesh(chaserGeo, chaserMat);
+        chaser.position.set(lanes[currentLane], 0.8, 3.5);
+        scene.add(chaser);
+
+        // Con chó chạy bên cạnh bà chủ
+        let dogGeo = new THREE.BoxGeometry(0.6, 0.6, 0.9);
+        let dogMat = new THREE.MeshPhongMaterial({ color: 0xff9800 });
+        dog = new THREE.Mesh(dogGeo, dogMat);
+        dog.position.set(lanes[currentLane] + 0.8, 0.3, 3.2);
+        scene.add(dog);
+
+        // Bắt sự kiện bàn phím
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') moveLeft();
+            if (e.key === 'ArrowRight') moveRight();
+            if (e.key === 'ArrowUp' || e.key === ' ') jump();
+        });
+
+        animate();
+    }
+
+    function moveLeft() { if (currentLane > 0 && !isGameOver) currentLane--; }
+    function moveRight() { if (currentLane < 2 && !isGameOver) currentLane++; }
+    function jump() {
+        if (!isJumping && !isGameOver) {
+            isJumping = true;
+            jumpSpeed = 0.25;
         }
     }
 
-    let mangoes = 0;
-    let dogAwake = false;
-    let canvas = document.getElementById('chaseCanvas');
-    let ctx = canvas.getContext('2d');
-    let playerLane = 1;
-    let distance = 0;
-    let gap = 15;
-    let gameInterval;
-    let speed = 3;
-    let obstacles = [];
-    
-    // Load ảnh từ kho GitHub của bạn
-    let bgRoad = new Image(); bgRoad.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap6.jpg';
-    let imgMasha = new Image(); imgMasha.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg';
-    let imgGranny = new Image(); imgGranny.src = 'https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg';
+    function spawnObjects() {
+        if (Math.random() < 0.05) {
+            let laneIndex = Math.floor(Math.random() * 3);
+            let obsGeo = new THREE.BoxGeometry(1.2, 1, 1);
+            let obsMat = new THREE.MeshPhongMaterial({ color: 0x795548 });
+            let obs = new THREE.Mesh(obsGeo, obsMat);
+            obs.position.set(lanes[laneIndex], 0.5, -60);
+            scene.add(obs);
+            obstacles.push(obs);
+        }
 
-    function stealMango() {
-        playSound('pluck');
-        mangoes += Math.floor(Math.random() * 2) + 1;
-        document.getElementById('status-text').innerHTML = "Bé Masha đã hái được <b>" + mangoes + "</b> quả xoài keo chín!";
-        
-        if (mangoes >= 3 && !dogAwake) {
-            dogAwake = true;
-            playSound('bark');
-            document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(10deg)";
-            document.getElementById('granny-house').style.display = "block";
-            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Chó sủa ầm ĩ! Bà chủ cầm chiếc dép thần thánh xông ra quát!";
-            document.getElementById('run-btn').style.display = "inline-block";
+        if (Math.random() < 0.08) {
+            let laneIndex = Math.floor(Math.random() * 3);
+            let mangoGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            let mangoMat = new THREE.MeshPhongMaterial({ color: 0xffeb3b });
+            let mango = new THREE.Mesh(mangoGeo, mangoMat);
+            mango.position.set(lanes[laneIndex], 1, -60);
+            scene.add(mango);
+            mangoes.push(mango);
         }
     }
 
-    function startChase() {
-        playSound('boost');
-        document.getElementById('scene1').classList.remove('active');
-        document.getElementById('scene2').classList.add('active');
-        document.getElementById('mango-count').innerText = mangoes;
-        gameInterval = setInterval(updateGame, 50);
-    }
+    function animate() {
+        if (isGameOver) return;
+        requestAnimationFrame(animate);
 
-    function moveLeft() { if(playerLane > 0) { playerLane--; playSound('pluck'); } }
-    function moveRight() { if(playerLane < 2) { playerLane++; playSound('pluck'); } }
-    function useBoost() {
-        playSound('boost');
-        speed = 8;
-        gap += 4;
-        setTimeout(() => { speed = 3; }, 1200);
-    }
+        distance += 0.2;
+        document.getElementById('dist').innerText = Math.floor(distance);
 
-    function updateGame() {
-        distance += 0.5;
-        document.getElementById('dist-count').innerText = Math.floor(distance);
-        
-        if (Math.random() < 0.09) {
-            obstacles.push({ lane: Math.floor(Math.random() * 3), y: -50, type: Math.random() > 0.5 ? '🗿 Đá' : '🪵 Củi' });
+        // Cập nhật vị trí nhân vật (Di chuyển mượt giữa các làn)
+        player.position.x += (lanes[currentLane] - player.position.x) * 0.2;
+        chaser.position.x += (player.position.x - chaser.position.x) * 0.1;
+        dog.position.x += (player.position.x + 0.8 - dog.position.x) * 0.1;
+
+        // Xử lý Nhảy
+        if (isJumping) {
+            player.position.y += jumpSpeed;
+            jumpSpeed -= 0.015;
+            if (player.position.y <= 0.7) {
+                player.position.y = 0.7;
+                isJumping = false;
+            }
         }
-        
-        ctx.drawImage(bgRoad, 0, 0, canvas.width, canvas.height);
-        let lanesX = [80, 180, 280];
-        
-        ctx.font = "28px Arial";
-        for (let i = 0; i < obstacles.length; i++) {
+
+        // Camera đi theo nhân vật
+        camera.position.x = player.position.x * 0.5;
+
+        // Sinh chướng ngại vật & Xoài
+        spawnObjects();
+
+        // Di chuyển Chướng ngại vật
+        for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
-            obs.y += speed * 2.5;
-            ctx.fillText(obs.type, lanesX[obs.lane] - 15, obs.y);
-            
-            if (obs.y > 450 && obs.y < 530 && obs.lane === playerLane) {
-                playSound('hit');
-                gap -= 4;
-                mangoes = Math.max(0, mangoes - 1);
-                document.getElementById('mango-count').innerText = mangoes;
+            obs.position.z += speed;
+
+            // Va chạm Chướng ngại vật
+            if (Math.abs(obs.position.z - player.position.z) < 0.8 &&
+                Math.abs(obs.position.x - player.position.x) < 0.6 &&
+                player.position.y < 1.0) {
+                endGame();
+            }
+
+            if (obs.position.z > 10) {
+                scene.remove(obs);
                 obstacles.splice(i, 1);
             }
         }
-        
-        obstacles = obstacles.filter(o => o.y < 650);
 
-        // Hiệu ứng Bé Masha chạy né 3 làn đường
-        ctx.drawImage(imgMasha, lanesX[playerLane] - 25, 470, 50, 65);
-        
-        // Hiệu ứng Bà chủ rượt theo sau
-        let chaserY = 540 + (gap * 3.5);
-        ctx.drawImage(imgGranny, lanesX[playerLane] - 25, Math.min(chaserY, 560), 45, 60);
+        // Di chuyển & Ăn Xoài
+        for (let i = mangoes.length - 1; i >= 0; i--) {
+            let m = mangoes[i];
+            m.position.z += speed;
+            m.rotation.y += 0.05;
 
-        if (gap <= 0) {
-            endGame(false);
-        } else if (distance >= 100) {
-            endGame(true);
+            if (Math.abs(m.position.z - player.position.z) < 0.8 &&
+                Math.abs(m.position.x - player.position.x) < 0.6) {
+                score++;
+                document.getElementById('score').innerText = score;
+                scene.remove(m);
+                mangoes.splice(i, 1);
+            }
+
+            if (m.position.z > 10) {
+                scene.remove(m);
+                mangoes.splice(i, 1);
+            }
         }
+
+        renderer.render(scene, camera);
     }
 
-    function endGame(isWin) {
-        clearInterval(gameInterval);
-        document.getElementById('scene2').classList.remove('active');
-        document.getElementById('scene-end').classList.add('active');
-        
-        if (isWin) {
-            playSound('boost');
-            document.getElementById('end-title').innerHTML = "🎉 THẮNG RỰC RỠ!";
-            document.getElementById('end-title').style.color = "#2ecc71";
-            document.getElementById('end-desc').innerHTML = "Bé Masha đã ôm trọn <b>" + mangoes + " quả xoài</b> chạy thoát về xóm!";
-        } else {
-            playSound('hit');
-            document.getElementById('end-title').innerHTML = "😭 BỊ BẮT RỒI!";
-            document.getElementById('end-title').style.color = "#e74c3c";
-            document.getElementById('end-desc').innerHTML = "Bà chủ cầm chiếc chiếc dép thần thánh vụt trúng Masha! Rơi mất sạch xoài!";
-        }
+    function endGame() {
+        isGameOver = true;
+        document.getElementById('msg').style.display = 'block';
     }
+
+    function resetGame() {
+        location.reload();
+    }
+
+    init();
 </script>
-
 </body>
 </html>
 """
 
-components.html(html_code, height=640)
+components.html(html_3d_code, height=650)
