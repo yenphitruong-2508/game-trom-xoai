@@ -35,16 +35,15 @@ html_code = """
     
     .btn {
         background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white; border: none; padding: 12px 24px;
+        color: white; border: none; padding: 12px 28px;
         font-size: 16px; font-weight: bold; border-radius: 25px;
         cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         margin: 4px; transition: transform 0.1s;
     }
     .btn:active { transform: scale(0.92); }
-    .btn-boost { background: linear-gradient(135deg, #e74c3c, #c0392b); }
     
     .dialog-box {
-        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 82%;
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 75%;
         background: rgba(0,0,0,0.85); border: 2px solid #f1c40f;
         border-radius: 12px; padding: 15px; box-sizing: border-box;
     }
@@ -56,33 +55,33 @@ html_code = """
 <body>
 
 <div id="game-container">
-    <!-- CẢNH 1: LÉN HÁI 8 QUẢ XOÀI (GHÉP XOÀI VÀO CÂY NHÀ BÀ HÀNG XÓM) -->
+    <!-- CẢNH 1: LÉN HÁI 8 QUẢ XOÀI Ở GÓC TRÁI -->
     <div id="scene1" class="scene active" style="background-image: url('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');">
         <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 20px; color: #f1c40f;">
             🥭 TRỘM XOÀI NHÀ BÀ HÀNG XÓM
         </div>
         
-        <!-- Bé Masha leo cây rõ nét, tách viền -->
-        <img id="masha-climb" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg" style="position: absolute; top: 120px; left: 220px; width: 85px; z-index: 5; mix-blend-mode: multiply; transition: transform 0.2s;">
+        <!-- Chùm xoài ghép ở góc trái trên cây -->
+        <div id="mango-cluster" style="position: absolute; top: 75px; left: 120px; font-size: 26px; z-index: 3;">🥭🥭🥭🥭🥭🥭🥭🥭</div>
+        
+        <!-- Bé Masha leo cây (Góc trái, rõ nét, k bị mờ) -->
+        <canvas id="canvasMashaClimb" width="90" height="110" style="position: absolute; top: 110px; left: 100px; z-index: 4;"></canvas>
         
         <!-- Chú chó nằm dưới gốc cây -->
-        <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" style="position: absolute; bottom: 100px; right: 180px; width: 95px; mix-blend-mode: multiply; transition: transform 0.3s;">
+        <canvas id="canvasDogSleep" width="100" height="80" style="position: absolute; bottom: 100px; right: 180px; z-index: 4;"></canvas>
         
-        <!-- Bà hàng xóm (Ẩn ban đầu, đủ 8 quả tự động xông ra) -->
-        <img id="granny-appear" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" style="position: absolute; bottom: 90px; left: 80px; width: 120px; display: none; mix-blend-mode: multiply;">
-
-        <!-- Các quả xoài trên cây để hái -->
-        <div id="mango-cluster" style="position: absolute; top: 80px; left: 180px; font-size: 24px;">🥭🥭🥭🥭🥭🥭🥭🥭</div>
+        <!-- Bà hàng xóm xuất hiện khi đủ 8 quả -->
+        <canvas id="canvasGranny" width="100" height="120" style="position: absolute; bottom: 90px; left: 60px; display: none; z-index: 4;"></canvas>
 
         <div class="dialog-box">
             <div id="status-text" style="color: #f1c40f; font-weight: bold; margin-bottom: 10px; font-size: 16px;">
-                Bé Masha đang trèo lên cây xoài trước nhà. Hãy bấm hái đủ 8 quả xoài! (Đã hái: <span id="picked-count">0</span>/8)
+                Đã hái: <span id="picked-count">0</span> / 8 quả
             </div>
-            <button id="pick-btn" class="btn" onclick="pickMango()">🥭 Hái 1 quả xoài</button>
+            <button id="pick-btn" class="btn" onclick="pickMango()">Hái xoài (đừng để bị phát hiện)</button>
         </div>
     </div>
 
-    <!-- CẢNH 2: RƯỢT ĐUỔI 4D (NỀN TRÊN LÀ ĐƯỜNG LÀNG, ĐƯỜNG CHẠY MÀU XÁM, CHƯỚNG NGẠI VẬT ĐÁ/GẠCH/CỎ/GỖ) -->
+    <!-- CẢNH 2: RƯỢT ĐUỔI 4D -->
     <div id="scene2" class="scene">
         <div id="chase3d"></div>
         <div style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.8); padding: 8px 18px; border-radius: 20px; text-align: left; font-size: 15px; border: 2px solid #f1c40f; z-index: 10;">
@@ -92,51 +91,103 @@ html_code = """
         
         <div style="position: absolute; bottom: 15px; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
             <button class="btn" onclick="moveLeft()">⬅️ TRÁI</button>
-            <button class="btn btn-boost" onclick="jump()">🦘 NHẢY / NÉ</button>
+            <button class="btn" style="background:#e74c3c;" onclick="jump()">🦘 NHẢY / NÉ</button>
             <button class="btn" onclick="moveRight()">PHẢI ➡️</button>
         </div>
     </div>
 
     <!-- CẢNH KẾT THÚC -->
     <div id="scene-end" class="scene" style="background: #000; padding-top: 130px;">
-        <h1 id="end-title" style="color:#e74c3c; font-size: 32px;">😭 BỊ BẮT RỒI!</h1>
+        <h1 style="color:#e74c3c; font-size: 32px;">😭 BỊ BẮT RỒI!</h1>
         <p id="end-desc" style="font-size: 18px; padding: 0 30px; line-height: 1.6; color:#eee;"></p>
         <button class="btn" onclick="location.reload()">🔄 Chơi lại từ đầu</button>
     </div>
 </div>
 
 <script>
+    // Hàm xử lý ảnh sắc nét, xóa nền trắng triệt để không làm mờ màu
+    function drawCleanImage(imgUrl, canvasId) {
+        let canvas = document.getElementById(canvasId);
+        if(!canvas) return;
+        let ctx = canvas.getContext('2d');
+        let img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = imgUrl;
+        img.onload = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+                // Xóa nền trắng tinh hoặc gần trắng mà không ảnh hưởng màu nhân vật
+                if (r > 230 && g > 230 && b > 230) {
+                    data[i+3] = 0;
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+    }
+
+    drawCleanImage('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg', 'canvasMashaClimb');
+    drawCleanImage('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg', 'canvasDogSleep');
+    drawCleanImage('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg', 'canvasGranny');
+
+    // Hiệu ứng âm thanh Web Audio API
+    function playSound(type) {
+        try {
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'bark') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'chase') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            }
+        } catch(e) {}
+    }
+
     let pickedMangoes = 0;
     
     function pickMango() {
         pickedMangoes++;
         document.getElementById('picked-count').innerText = pickedMangoes;
         
-        // Hiệu ứng Masha hái
-        let masha = document.getElementById('masha-climb');
-        masha.style.transform = "translateY(-10px) scale(1.05)";
-        setTimeout(() => { masha.style.transform = "translateY(0) scale(1)"; }, 150);
-        
-        // Giảm số xoài trên cây hiển thị
         let mangoIcons = "🥭".repeat(Math.max(0, 8 - pickedMangoes));
         document.getElementById('mango-cluster').innerText = mangoIcons;
 
         if (pickedMangoes < 8) {
-            document.getElementById('status-text').innerHTML = "Bé Masha đã hái được <b>" + pickedMangoes + "</b> quả xoài! (Cần hái đủ 8 quả)";
+            document.getElementById('status-text').innerHTML = "Đã hái: <b>" + pickedMangoes + "</b> / 8 quả";
         } else {
-            // Đủ 8 quả: Tự động kích hoạt chó sủa và bà hàng xóm rượt đuổi ngay lập tức
-            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Đã đủ 8 quả, chú chó sủa vang và bà hàng xóm xông ra đuổi bắt ngay lập tức!";
+            // Đủ 8 quả: Phát âm thanh chó sủa, bà hàng xóm ra đuổi ngay lập tức
+            playSound('bark');
+            document.getElementById('status-text').innerHTML = "🐕 GÂU GÂU! Chó sủa vang và bà hàng xóm xông ra đuổi bắt!";
             document.getElementById('pick-btn').style.display = 'none';
-            document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(20deg)";
-            document.getElementById('granny-appear').style.display = "block";
+            document.getElementById('canvasGranny').style.display = "block";
             
             setTimeout(() => {
+                playSound('chase');
                 start4DChase();
-            }, 1800);
+            }, 1500);
         }
     }
 
-    // 4D THREE.JS: NỀN TRÊN LÀ ĐƯỜNG LÀNG, ĐƯỜNG CHẠY MÀU XÁM, CHƯỚNG NGẠI VẬT ĐÁ/GẠCH/CỎ/GỖ
+    // 4D THREE.JS RƯỢT ĐUỔI
     let scene, camera, renderer;
     let player, chaser, dog;
     let lanes = [-2.0, 0, 2.0];
@@ -162,8 +213,6 @@ html_code = """
     function init4D() {
         let container = document.getElementById('chase3d');
         scene = new THREE.Scene();
-        
-        // Phông nền toàn cảnh phía trên là con đường làng btap6.jpg
         scene.background = texVillageBg;
 
         camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -177,29 +226,26 @@ html_code = """
         let ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
 
-        // Mặt đường chạy chính giữa làm màu xám đặc trưng của đường đá
+        // Đường chạy màu xám
         let roadGeo = new THREE.PlaneGeometry(8.5, 300);
-        let roadMat = new THREE.MeshBasicMaterial({ color: 0x6e6e6e }); // Màu xám đường đá
+        let roadMat = new THREE.MeshBasicMaterial({ color: 0x6e6e6e });
         let road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.position.z = -100;
         scene.add(road);
 
-        // Bé Masha nét căng, xóa phông nền trắng
         let matMasha = new THREE.SpriteMaterial({ map: texMasha, transparent: true, alphaTest: 0.15 });
         player = new THREE.Sprite(matMasha);
         player.scale.set(1.3, 1.8, 1);
         player.position.set(lanes[currentLane], 0.9, 0);
         scene.add(player);
 
-        // Bà hàng xóm sắc nét
         let matGranny = new THREE.SpriteMaterial({ map: texGranny, transparent: true, alphaTest: 0.15 });
         chaser = new THREE.Sprite(matGranny);
         chaser.scale.set(1.5, 2.0, 1);
         chaser.position.set(lanes[currentLane], 1.0, 3.2);
         scene.add(chaser);
 
-        // Chú chó sắc nét
         let matDog = new THREE.SpriteMaterial({ map: texDog, transparent: true, alphaTest: 0.15 });
         dog = new THREE.Sprite(matDog);
         dog.scale.set(1.0, 1.3, 1);
@@ -225,15 +271,13 @@ html_code = """
         }
     }
 
-    // Danh sách chướng ngại vật: Cục đá, gạch, bụi cỏ, khúc gỗ
+    // Chướng ngại vật: Cục đá, viên gạch, bụi cỏ, khúc gỗ
     const obsTypes = ['🪨 Cục đá', '🧱 Viên gạch', '🌿 Bụi cỏ', '🪵 Khúc gỗ'];
 
     function spawnObstacles() {
         if (Math.random() < 0.045) {
             let laneIndex = Math.floor(Math.random() * 3);
             let chosenObs = obsTypes[Math.floor(Math.random() * obsTypes.length)];
-            
-            // Dựng hình khối 3D trực quan cho chướng ngại vật
             let obsGeo = new THREE.BoxGeometry(1.2, 0.7, 0.9);
             let obsMat = new THREE.MeshPhongMaterial({ color: chosenObs.includes('gạch') ? 0xb7410e : 0x555555 });
             let obs = new THREE.Mesh(obsGeo, obsMat);
@@ -288,7 +332,7 @@ html_code = """
         isGameOver = true;
         document.getElementById('scene2').classList.remove('active');
         document.getElementById('scene-end').classList.add('active');
-        document.getElementById('end-desc').innerHTML = "Bà hàng xóm cầm chiếc dép vụt trúng Masha do vướng phải chướng ngại vật! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và ôm trọn <b>" + pickedMangoes + " quả xoài</b>!";
+        document.getElementById('end-desc').innerHTML = "Bà hàng xóm cầm chiếc dép vụt trúng Masha do vướng chướng ngại vật! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và ôm trọn <b>" + pickedMangoes + " quả xoài</b>!";
     }
 </script>
 
