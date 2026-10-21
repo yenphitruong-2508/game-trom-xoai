@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Trộm xoài nhà bà hàng xóm", page_icon="🥭", layout="wide")
 
-html_4d_code = """
+html_code = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -56,44 +56,43 @@ html_4d_code = """
 <body>
 
 <div id="game-container">
-    <!-- CẢNH 1: LÉN HÁI XOÀI (MASHA LEO CÂY XOÀI - BÀ HÀNG XÓM KHÔNG Ở ĐÓ BAN ĐẦU) -->
+    <!-- CẢNH 1: LÉN HÁI 8 QUẢ XOÀI (GHÉP XOÀI VÀO CÂY NHÀ BÀ HÀNG XÓM) -->
     <div id="scene1" class="scene active" style="background-image: url('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');">
         <div style="background: rgba(0,0,0,0.6); padding: 8px; font-weight: bold; font-size: 20px; color: #f1c40f;">
             🥭 TRỘM XOÀI NHÀ BÀ HÀNG XÓM
         </div>
         
-        <!-- Cây xoài keo to trĩu quả -->
-        <img src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap.jpg" style="position: absolute; top: 35px; right: 100px; width: 240px; height: 190px; border-radius: 15px; border: 3px solid #f1c40f; object-fit: cover;">
+        <!-- Bé Masha leo cây rõ nét, tách viền -->
+        <img id="masha-climb" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg" style="position: absolute; top: 120px; left: 220px; width: 85px; z-index: 5; mix-blend-mode: multiply; transition: transform 0.2s;">
         
-        <!-- Bé Masha đang LEO TRÊN CÂY XOÀI (Cắt nền nét căng) -->
-        <img id="masha-climb" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg" style="position: absolute; top: 80px; right: 180px; width: 85px; z-index: 5; mix-blend-mode: multiply; transition: transform 0.2s;">
+        <!-- Chú chó nằm dưới gốc cây -->
+        <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" style="position: absolute; bottom: 100px; right: 180px; width: 95px; mix-blend-mode: multiply; transition: transform 0.3s;">
         
-        <!-- Chú chó đang nằm ngủ dưới gốc cây -->
-        <img id="dog-sleep" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg" style="position: absolute; bottom: 110px; right: 140px; width: 95px; mix-blend-mode: multiply; transition: transform 0.3s;">
-        
-        <!-- Bà hàng xóm (BAN ĐẦU ẨN ĐI, KHI CHÓ SỦA MỚI XUẤT HIỆN) -->
-        <img id="granny-appear" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" style="position: absolute; bottom: 110px; left: 80px; width: 120px; display: none; mix-blend-mode: multiply;">
+        <!-- Bà hàng xóm (Ẩn ban đầu, đủ 8 quả tự động xông ra) -->
+        <img id="granny-appear" src="https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg" style="position: absolute; bottom: 90px; left: 80px; width: 120px; display: none; mix-blend-mode: multiply;">
+
+        <!-- Các quả xoài trên cây để hái -->
+        <div id="mango-cluster" style="position: absolute; top: 80px; left: 180px; font-size: 24px;">🥭🥭🥭🥭🥭🥭🥭🥭</div>
 
         <div class="dialog-box">
             <div id="status-text" style="color: #f1c40f; font-weight: bold; margin-bottom: 10px; font-size: 16px;">
-                Bé Masha đang trèo lên cây xoài keo chín mọng... Bà hàng xóm chưa có ở đây, chú chó đang ngủ thiu thiu.
+                Bé Masha đang trèo lên cây xoài trước nhà. Hãy bấm hái đủ 8 quả xoài! (Đã hái: <span id="picked-count">0</span>/8)
             </div>
-            <button class="btn" onclick="climbAndPick()">🧗 Leo cây hái xoài</button>
-            <button id="run-btn" class="btn btn-boost" style="display:none;" onclick="start4DChase()">🏃 TỤT XUỐNG ÔM XOÀI CHẠY!</button>
+            <button id="pick-btn" class="btn" onclick="pickMango()">🥭 Hái 1 quả xoài</button>
         </div>
     </div>
 
-    <!-- CẢNH 2: RƯỢT ĐUỔI 4D MÀN HÌNH NGANG (NỀN TRÊN LÀ ĐƯỜNG LÀNG - DƯỚI LÀ MẶT ĐƯỜNG ĐÁ) -->
+    <!-- CẢNH 2: RƯỢT ĐUỔI 4D (NỀN TRÊN LÀ ĐƯỜNG LÀNG, ĐƯỜNG CHẠY MÀU XÁM, CHƯỚNG NGẠI VẬT ĐÁ/GẠCH/CỎ/GỖ) -->
     <div id="scene2" class="scene">
         <div id="chase3d"></div>
         <div style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.8); padding: 8px 18px; border-radius: 20px; text-align: left; font-size: 15px; border: 2px solid #f1c40f; z-index: 10;">
-            🥭 Xoài: <span id="mango-count" style="color:#f1c40f; font-weight:bold;">0</span> | 
+            🥭 Xoài: <span id="mango-count" style="color:#f1c40f; font-weight:bold;">8</span> | 
             🏃 Quãng đường: <span id="dist-count" style="color:#2ecc71; font-weight:bold;">0</span>m
         </div>
         
         <div style="position: absolute; bottom: 15px; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10;">
             <button class="btn" onclick="moveLeft()">⬅️ TRÁI</button>
-            <button class="btn btn-boost" onclick="jump()">🦘 NHẢY / BỨT TỐC</button>
+            <button class="btn btn-boost" onclick="jump()">🦘 NHẢY / NÉ</button>
             <button class="btn" onclick="moveRight()">PHẢI ➡️</button>
         </div>
     </div>
@@ -107,26 +106,37 @@ html_4d_code = """
 </div>
 
 <script>
-    let mangoes = 0;
-    let dogAwake = false;
+    let pickedMangoes = 0;
     
-    function climbAndPick() {
-        mangoes += Math.floor(Math.random() * 2) + 1;
-        document.getElementById('masha-climb').style.transform = "translateY(-12px) scale(1.08)";
-        setTimeout(() => { document.getElementById('masha-climb').style.transform = "translateY(0) scale(1)"; }, 200);
+    function pickMango() {
+        pickedMangoes++;
+        document.getElementById('picked-count').innerText = pickedMangoes;
         
-        document.getElementById('status-text').innerHTML = "Bé Masha với tay hái được <b>" + mangoes + "</b> quả xoài keo ngọt lịm!";
+        // Hiệu ứng Masha hái
+        let masha = document.getElementById('masha-climb');
+        masha.style.transform = "translateY(-10px) scale(1.05)";
+        setTimeout(() => { masha.style.transform = "translateY(0) scale(1)"; }, 150);
         
-        if (mangoes >= 3 && !dogAwake) {
-            dogAwake = true;
-            document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(15deg)";
+        // Giảm số xoài trên cây hiển thị
+        let mangoIcons = "🥭".repeat(Math.max(0, 8 - pickedMangoes));
+        document.getElementById('mango-cluster').innerText = mangoIcons;
+
+        if (pickedMangoes < 8) {
+            document.getElementById('status-text').innerHTML = "Bé Masha đã hái được <b>" + pickedMangoes + "</b> quả xoài! (Cần hái đủ 8 quả)";
+        } else {
+            // Đủ 8 quả: Tự động kích hoạt chó sủa và bà hàng xóm rượt đuổi ngay lập tức
+            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Đã đủ 8 quả, chú chó sủa vang và bà hàng xóm xông ra đuổi bắt ngay lập tức!";
+            document.getElementById('pick-btn').style.display = 'none';
+            document.getElementById('dog-sleep').style.transform = "scale(1.2) rotate(20deg)";
             document.getElementById('granny-appear').style.display = "block";
-            document.getElementById('status-text').innerHTML = "🐕 <b>GÂU GÂU GÂU!</b> Chó giật mình sủa ầm ĩ! Bà hàng xóm xông ra cầm chiếc dép quát lớn!";
-            document.getElementById('run-btn').style.display = "inline-block";
+            
+            setTimeout(() => {
+                start4DChase();
+            }, 1800);
         }
     }
 
-    // KHÔNG GIAN 4D THREE.JS MÀN HÌNH NGANG
+    // 4D THREE.JS: NỀN TRÊN LÀ ĐƯỜNG LÀNG, ĐƯỜNG CHẠY MÀU XÁM, CHƯỚNG NGẠI VẬT ĐÁ/GẠCH/CỎ/GỖ
     let scene, camera, renderer;
     let player, chaser, dog;
     let lanes = [-2.0, 0, 2.0];
@@ -145,7 +155,7 @@ html_4d_code = """
     function start4DChase() {
         document.getElementById('scene1').classList.remove('active');
         document.getElementById('scene2').classList.add('active');
-        document.getElementById('mango-count').innerText = mangoes;
+        document.getElementById('mango-count').innerText = pickedMangoes;
         init4D();
     }
 
@@ -153,9 +163,8 @@ html_4d_code = """
         let container = document.getElementById('chase3d');
         scene = new THREE.Scene();
         
-        // Phông nền toàn cảnh phía trên đường làng btap6.jpg
+        // Phông nền toàn cảnh phía trên là con đường làng btap6.jpg
         scene.background = texVillageBg;
-        scene.fog = new THREE.FogExp2(0xa0d2eb, 0.012);
 
         camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.set(0, 3.0, 6.2);
@@ -168,32 +177,29 @@ html_4d_code = """
         let ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
 
-        // Mặt đường đá dưới đất cuộn chuyển động
-        let roadGeo = new THREE.PlaneGeometry(10, 300);
-        let roadMat = new THREE.MeshBasicMaterial({ map: texVillageBg });
-        texVillageBg.wrapS = THREE.RepeatWrapping;
-        texVillageBg.wrapT = THREE.RepeatWrapping;
-        texVillageBg.repeat.set(1, 20);
+        // Mặt đường chạy chính giữa làm màu xám đặc trưng của đường đá
+        let roadGeo = new THREE.PlaneGeometry(8.5, 300);
+        let roadMat = new THREE.MeshBasicMaterial({ color: 0x6e6e6e }); // Màu xám đường đá
         let road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.position.z = -100;
         scene.add(road);
 
-        // Nhân vật Masha sắc nét (Xóa phông nền trắng)
+        // Bé Masha nét căng, xóa phông nền trắng
         let matMasha = new THREE.SpriteMaterial({ map: texMasha, transparent: true, alphaTest: 0.15 });
         player = new THREE.Sprite(matMasha);
         player.scale.set(1.3, 1.8, 1);
         player.position.set(lanes[currentLane], 0.9, 0);
         scene.add(player);
 
-        // Bà hàng xóm
+        // Bà hàng xóm sắc nét
         let matGranny = new THREE.SpriteMaterial({ map: texGranny, transparent: true, alphaTest: 0.15 });
         chaser = new THREE.Sprite(matGranny);
         chaser.scale.set(1.5, 2.0, 1);
         chaser.position.set(lanes[currentLane], 1.0, 3.2);
         scene.add(chaser);
 
-        // Chú chó
+        // Chú chó sắc nét
         let matDog = new THREE.SpriteMaterial({ map: texDog, transparent: true, alphaTest: 0.15 });
         dog = new THREE.Sprite(matDog);
         dog.scale.set(1.0, 1.3, 1);
@@ -211,7 +217,7 @@ html_4d_code = """
     }
 
     function moveLeft() { if (currentLane > 0 && !isGameOver) currentLane--; }
-    function moveRight() { if (currentLane < 2 && !isGameOver) currentLane--; }
+    function moveRight() { if (currentLane < 2 && !isGameOver) currentLane++; }
     function jump() {
         if (!isJumping && !isGameOver) {
             isJumping = true;
@@ -219,13 +225,19 @@ html_4d_code = """
         }
     }
 
+    // Danh sách chướng ngại vật: Cục đá, gạch, bụi cỏ, khúc gỗ
+    const obsTypes = ['🪨 Cục đá', '🧱 Viên gạch', '🌿 Bụi cỏ', '🪵 Khúc gỗ'];
+
     function spawnObstacles() {
         if (Math.random() < 0.045) {
             let laneIndex = Math.floor(Math.random() * 3);
-            let obsGeo = new THREE.BoxGeometry(1.2, 0.8, 1.0);
-            let obsMat = new THREE.MeshPhongMaterial({ color: 0x4a3728 }); // Khúc gỗ, tảng đá làng quê
+            let chosenObs = obsTypes[Math.floor(Math.random() * obsTypes.length)];
+            
+            // Dựng hình khối 3D trực quan cho chướng ngại vật
+            let obsGeo = new THREE.BoxGeometry(1.2, 0.7, 0.9);
+            let obsMat = new THREE.MeshPhongMaterial({ color: chosenObs.includes('gạch') ? 0xb7410e : 0x555555 });
             let obs = new THREE.Mesh(obsGeo, obsMat);
-            obs.position.set(lanes[laneIndex], 0.4, -65);
+            obs.position.set(lanes[laneIndex], 0.35, -65);
             scene.add(obs);
             obstacles.push(obs);
         }
@@ -237,8 +249,6 @@ html_4d_code = """
 
         distance += 0.25;
         document.getElementById('dist-count').innerText = Math.floor(distance);
-
-        texVillageBg.offset.y -= 0.022;
 
         player.position.x += (lanes[currentLane] - player.position.x) * 0.25;
         chaser.position.x += (player.position.x - chaser.position.x) * 0.12;
@@ -278,7 +288,7 @@ html_4d_code = """
         isGameOver = true;
         document.getElementById('scene2').classList.remove('active');
         document.getElementById('scene-end').classList.add('active');
-        document.getElementById('end-desc').innerHTML = "Bà hàng xóm cầm chiếc dép vụt trúng Masha do vướng chướng ngại vật trên đường đá! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và hái được <b>" + mangoes + " quả xoài</b>!";
+        document.getElementById('end-desc').innerHTML = "Bà hàng xóm cầm chiếc dép vụt trúng Masha do vướng phải chướng ngại vật! Bạn đã chạy được <b>" + Math.floor(distance) + "m</b> và ôm trọn <b>" + pickedMangoes + " quả xoài</b>!";
     }
 </script>
 
@@ -286,4 +296,4 @@ html_4d_code = """
 </html>
 """
 
-components.html(html_4d_code, height=560)
+components.html(html_code, height=560)
