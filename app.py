@@ -9,7 +9,7 @@ html_3d_code = """
 <head>
 <meta charset="utf-8">
 <style>
-    body { margin: 0; overflow: hidden; background: #0f172a; font-family: 'Segoe UI', sans-serif; }
+    body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; }
     #ui {
         position: absolute; top: 15px; left: 15px;
         color: #fff; font-size: 18px; font-weight: bold;
@@ -48,9 +48,9 @@ html_3d_code = """
 
 <!-- MÀN HÌNH CHỜ BẮT ĐẦU -->
 <div id="start-screen">
-    <h1 style="color: #f1c40f; text-shadow: 3px 3px 6px #000; font-size: 32px;">🥭 TRỘM XOÀI: CUỘC RƯỢT ĐUỔI 4D 🏃</h1>
+    <h1 style="color: #f1c40f; text-shadow: 3px 3px 6px #000; font-size: 30px;">🥭 TRỘM XOÀI: ĐƯỜNG LÀNG QUÊ 🏃</h1>
     <p style="font-size: 16px; padding: 0 30px; line-height: 1.6; max-width: 400px;">
-        Bé Masha hái xoài bị phát hiện! Không gian bao quanh sống động y hệt game rượt đuổi thực tế. Hãy né tránh chướng ngại vật thật khéo léo nhé!
+        Bé Masha hái xoài bị phát hiện! Bà chủ và chú chó đang hung hãn đuổi theo phía sau trên con đường đá quen thuộc. Hãy né chướng ngại vật thật khéo léo nhé!
     </p>
     <button class="btn btn-boost" onclick="startGame()">🚀 BẮT ĐẦU CHƠI NGAY</button>
 </div>
@@ -69,72 +69,74 @@ html_3d_code = """
 
 <script>
     let scene, camera, renderer;
-    let player, chaser;
-    let lanes = [-2.2, 0, 2.2];
+    let player, chaser, dog;
+    let lanes = [-1.8, 0, 1.8];
     let currentLane = 1;
     let isJumping = false, jumpSpeed = 0;
-    let score = 0, distance = 0, speed = 0.4;
-    let obstacles = [], mangoes = [], sceneryItems = [];
+    let score = 0, distance = 0, speed = 0.35;
+    let obstacles = [], mangoes = [];
     let isGameStarted = false, isGameOver = false;
 
-    // Load Texture hình ảnh từ GitHub
+    // Load hình ảnh từ GitHub và bật chế độ trong suốt (Transparent) để cắt bỏ viền trắng
     const textureLoader = new THREE.TextureLoader();
-    const texMasha = textureLoader.load('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg');
-    const texGranny = textureLoader.load('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg');
+    
+    function loadTransparentTexture(url) {
+        let tex = textureLoader.load(url);
+        return tex;
+    }
+
+    const texMasha = loadTransparentTexture('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap4.jpg');
+    const texGranny = loadTransparentTexture('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap3.jpg');
+    const texDog = loadTransparentTexture('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap5.jpg');
     const texRoad = textureLoader.load('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap6.jpg');
-    const texHouse = textureLoader.load('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap2.jpg');
-    const texTree = textureLoader.load('https://raw.githubusercontent.com/yenphitruong-2508/game-trom-xoai/main/btap.jpg');
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x70a1ff);
-        scene.fog = new THREE.FogExp2(0x70a1ff, 0.025);
+        scene.background = new THREE.Color(0xa0d2eb);
+        scene.fog = new THREE.FogExp2(0xa0d2eb, 0.02);
 
-        camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 3.2, 6.5);
-        camera.rotation.x = -0.2;
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3.0, 6.0);
+        camera.rotation.x = -0.22;
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Ánh sáng môi trường 4D
-        let ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        let ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
-        let dirLight = new THREE.DirectionalLight(0xfffa65, 1.0);
-        dirLight.position.set(10, 20, 10);
-        scene.add(dirLight);
 
-        // Mặt đường đất làng chính giữa
-        let roadGeo = new THREE.PlaneGeometry(12, 300);
-        let roadMat = new THREE.MeshPhongMaterial({ map: texRoad });
+        // Tạo mặt đường lấy từ ảnh btap6.jpg
+        let roadGeo = new THREE.PlaneGeometry(10, 300);
+        let roadMat = new THREE.MeshBasicMaterial({ map: texRoad });
         texRoad.wrapS = THREE.RepeatWrapping;
         texRoad.wrapT = THREE.RepeatWrapping;
-        texRoad.repeat.set(1, 30);
+        texRoad.repeat.set(1, 25);
         let road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.position.z = -100;
         scene.add(road);
 
-        // Tạo cảnh quan hai bên đường (Cây xoài & Nhà cửa bao quanh)
-        for(let i = -120; i <= 20; i += 15) {
-            createScenerySide(-7, i);
-            createScenerySide(7, i);
-        }
-
-        // Nhân vật Bé Masha
-        let matMasha = new THREE.SpriteMaterial({ map: texMasha });
+        // Nhân vật Masha (Sprite trong suốt, cắt viền trắng)
+        let matMasha = new THREE.SpriteMaterial({ map: texMasha, transparent: true, alphaTest: 0.1 });
         player = new THREE.Sprite(matMasha);
-        player.scale.set(1.4, 2.0, 1);
-        player.position.set(lanes[currentLane], 1.0, 0);
+        player.scale.set(1.1, 1.6, 1);
+        player.position.set(lanes[currentLane], 0.8, 0);
         scene.add(player);
 
         // Bà chủ nhà rượt đuổi phía sau
-        let matGranny = new THREE.SpriteMaterial({ map: texGranny });
+        let matGranny = new THREE.SpriteMaterial({ map: texGranny, transparent: true, alphaTest: 0.1 });
         chaser = new THREE.Sprite(matGranny);
-        chaser.scale.set(1.6, 2.2, 1);
-        chaser.position.set(lanes[currentLane], 1.1, 3.5);
+        chaser.scale.set(1.3, 1.8, 1);
+        chaser.position.set(lanes[currentLane], 0.9, 3.0);
         scene.add(chaser);
+
+        // Chú chó chạy theo sau cùng bà chủ
+        let matDog = new THREE.SpriteMaterial({ map: texDog, transparent: true, alphaTest: 0.1 });
+        dog = new THREE.Sprite(matDog);
+        dog.scale.set(0.9, 1.2, 1);
+        dog.position.set(lanes[currentLane] + 0.8, 0.6, 2.8);
+        scene.add(dog);
 
         window.addEventListener('keydown', (e) => {
             if (!isGameStarted) return;
@@ -144,15 +146,6 @@ html_3d_code = """
         });
 
         renderer.render(scene, camera);
-    }
-
-    function createScenerySide(xPos, zPos) {
-        let mat = Math.random() > 0.5 ? new THREE.SpriteMaterial({ map: texTree }) : new THREE.SpriteMaterial({ map: texHouse });
-        let obj = new THREE.Sprite(mat);
-        obj.scale.set(4, 4, 1);
-        obj.position.set(xPos, 2, zPos);
-        scene.add(obj);
-        sceneryItems.push(obj);
     }
 
     function startGame() {
@@ -168,27 +161,27 @@ html_3d_code = """
     function jump() {
         if (!isJumping && !isGameOver) {
             isJumping = true;
-            jumpSpeed = 0.25;
+            jumpSpeed = 0.22;
         }
     }
 
     function spawnObjects() {
-        if (Math.random() < 0.045) {
+        if (Math.random() < 0.04) {
             let laneIndex = Math.floor(Math.random() * 3);
-            let obsGeo = new THREE.BoxGeometry(1.3, 0.9, 1);
-            let obsMat = new THREE.MeshPhongMaterial({ color: 0x8d6e63, shininess: 50 });
+            let obsGeo = new THREE.BoxGeometry(1.1, 0.7, 0.8);
+            let obsMat = new THREE.MeshPhongMaterial({ color: 0x6d4c41 });
             let obs = new THREE.Mesh(obsGeo, obsMat);
-            obs.position.set(lanes[laneIndex], 0.45, -70);
+            obs.position.set(lanes[laneIndex], 0.35, -60);
             scene.add(obs);
             obstacles.push(obs);
         }
 
-        if (Math.random() < 0.08) {
+        if (Math.random() < 0.07) {
             let laneIndex = Math.floor(Math.random() * 3);
-            let mangoGeo = new THREE.SphereGeometry(0.4, 16, 16);
-            let mangoMat = new THREE.MeshPhongMaterial({ color: 0xffd54f, emissive: 0x332200 });
+            let mangoGeo = new THREE.SphereGeometry(0.35, 16, 16);
+            let mangoMat = new THREE.MeshPhongMaterial({ color: 0xffd54f });
             let mango = new THREE.Mesh(mangoGeo, mangoMat);
-            mango.position.set(lanes[laneIndex], 1.2, -70);
+            mango.position.set(lanes[laneIndex], 1.0, -60);
             scene.add(mango);
             mangoes.push(mango);
         }
@@ -198,41 +191,37 @@ html_3d_code = """
         if (isGameOver || !isGameStarted) return;
         requestAnimationFrame(animate);
 
-        distance += 0.25;
+        distance += 0.2;
         document.getElementById('dist').innerText = Math.floor(distance);
 
-        // Hiệu ứng cuốn cảnh đường và phong cảnh xung quanh
-        texRoad.offset.y -= 0.025;
+        // Hiệu ứng cuộn đường đá trong ảnh
+        texRoad.offset.y -= 0.02;
 
-        for(let item of sceneryItems) {
-            item.position.z += speed;
-            if(item.position.z > 15) item.position.z = -120;
-        }
-
-        // Di chuyển mượt nhân vật
+        // Di chuyển nhân vật mượt mà
         player.position.x += (lanes[currentLane] - player.position.x) * 0.25;
         chaser.position.x += (player.position.x - chaser.position.x) * 0.12;
+        dog.position.x += (player.position.x + 0.7 - dog.position.x) * 0.12;
 
-        // Hiệu ứng nhảy
+        // Xử lý nhảy
         if (isJumping) {
             player.position.y += jumpSpeed;
-            jumpSpeed -= 0.016;
-            if (player.position.y <= 1.0) {
-                player.position.y = 1.0;
+            jumpSpeed -= 0.015;
+            if (player.position.y <= 0.8) {
+                player.position.y = 0.8;
                 isJumping = false;
             }
         }
 
         spawnObjects();
 
-        // Xử lý chướng ngại vật
+        // Va chạm chướng ngại vật
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
             obs.position.z += speed;
 
-            if (Math.abs(obs.position.z - player.position.z) < 0.7 &&
-                Math.abs(obs.position.x - player.position.x) < 0.65 &&
-                player.position.y < 1.2) {
+            if (Math.abs(obs.position.z - player.position.z) < 0.6 &&
+                Math.abs(obs.position.x - player.position.x) < 0.5 &&
+                player.position.y < 1.0) {
                 endGame();
             }
 
@@ -242,14 +231,14 @@ html_3d_code = """
             }
         }
 
-        // Xử lý ăn xoài
+        // Ăn xoài
         for (let i = mangoes.length - 1; i >= 0; i--) {
             let m = mangoes[i];
             m.position.z += speed;
-            m.rotation.y += 0.08;
+            m.rotation.y += 0.05;
 
-            if (Math.abs(m.position.z - player.position.z) < 0.7 &&
-                Math.abs(m.position.x - player.position.x) < 0.65) {
+            if (Math.abs(m.position.z - player.position.z) < 0.6 &&
+                Math.abs(m.position.x - player.position.x) < 0.5) {
                 score++;
                 document.getElementById('score').innerText = score;
                 scene.remove(m);
@@ -282,3 +271,4 @@ html_3d_code = """
 """
 
 components.html(html_3d_code, height=650)
+        
